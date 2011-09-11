@@ -1,3 +1,0 @@
-[submodule "psake-contrib"]
-	path = psake-contrib
-	url = git://github.com/JamesKovacs/psake-contrib.git
