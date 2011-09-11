@@ -1,10 +1,11 @@
-﻿properties { 
+﻿Import-Module .\Build\psake-contrib\teamcity.psm1
+
+properties { 
 	$BaseDir = Resolve-Path ".\"
 	$SolutionFile = Resolve-Path $BaseDir\*.sln
 	$OutputDir = "$BaseDir\Out\"
 	$NuGetOutputDir = "$OutputDir\NuGet\"
 	$TestAssemblies= @("*.Tests.Unit.dll","*.Tests.Integration.dll","*.Tests.dll")
-
 	$NUnitPath = "$BaseDir\packages\NUnit.*\tools\nunit-console.exe"
 	$NuGetPath = "$BaseDir\packages\NuGet.Commandline.*\tools\NuGet.exe"
 } 
@@ -14,10 +15,12 @@ $framework = '4.0'
 task default -depends Build
 
 task Init {
+	Write-Host $BaseDir
 }
+
 task Clean -depends Init {
-    Remove-Item $OutputDir -recurse -force -ErrorAction SilentlyContinue
-	Remove-Item $NuGetOutputDir -recurse -force -ErrorAction SilentlyContinue
+    Remove-Item $OutputDir -recurse -force -ErrorAction SilentlyContinue -WhatIf:$Whatif
+	Remove-Item $NuGetOutputDir -recurse -force -ErrorAction SilentlyContinue -WhatIf:$Whatif
 	exec { msbuild /target:Clean /verbosity:minimal "$SolutionFile" }
 } 
 
@@ -32,10 +35,12 @@ task Test -depends Build {
 		throw "Could not find package NUnit at $NUnitPath, install with Install-Package NUnit"
 	}
 	if($Tests){
+		TeamCity-TestSuiteStarted "Started a test suite"
 		$old = pwd
 		cd $OutputDir
 	  	exec { & $NUnit /nologo $Tests }
 		cd $old
+		TeamCity-TestSuiteFinished "Finished a test suite" 
 	}else{
 		Write-Host "Nothing to test ($TestAssemblies)"
 	}
